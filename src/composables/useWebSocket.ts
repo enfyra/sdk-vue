@@ -1,9 +1,9 @@
 import { onUnmounted, readonly, ref, shallowRef } from 'vue';
 import { WebSocketClient } from '@enfyra/sdk-core';
-import type { WebSocketEvent } from '@enfyra/sdk-core';
+import type { WebSocketConfig, WebSocketEvent } from '@enfyra/sdk-core';
 import { useEnfyra } from './useEnfyra';
 
-export interface UseWebSocketOptions {
+export interface UseWebSocketOptions extends Pick<WebSocketConfig, 'path' | 'namespacePrefix' | 'withCredentials' | 'reconnect' | 'maxReconnectAttempts' | 'reconnectInterval' | 'reconnectDelayMax' | 'transports' | 'upgrade'> {
   baseUrl?: string;
   immediate?: boolean;
 }
@@ -24,12 +24,21 @@ export function useWebSocket(gateway: string, options: UseWebSocketOptions = {})
     error.value = null;
 
     const baseUrl = options.baseUrl ?? client.getHttpClient().baseUrl.replace(/\/api\/?$/, '');
-    const socket = new WebSocketClient({
+    const socketConfig: WebSocketConfig = {
       baseUrl,
       gateway,
       getAuthToken: () => client.auth.getToken(),
-      reconnect: true,
-    });
+    };
+    if (options.path !== undefined) socketConfig.path = options.path;
+    if (options.namespacePrefix !== undefined) socketConfig.namespacePrefix = options.namespacePrefix;
+    if (options.withCredentials !== undefined) socketConfig.withCredentials = options.withCredentials;
+    if (options.reconnect !== undefined) socketConfig.reconnect = options.reconnect;
+    if (options.maxReconnectAttempts !== undefined) socketConfig.maxReconnectAttempts = options.maxReconnectAttempts;
+    if (options.reconnectInterval !== undefined) socketConfig.reconnectInterval = options.reconnectInterval;
+    if (options.reconnectDelayMax !== undefined) socketConfig.reconnectDelayMax = options.reconnectDelayMax;
+    if (options.transports !== undefined) socketConfig.transports = options.transports;
+    if (options.upgrade !== undefined) socketConfig.upgrade = options.upgrade;
+    const socket = new WebSocketClient(socketConfig);
 
     socket.on('connect', () => { connected.value = true; connecting.value = false; });
     socket.on('disconnect', () => { connected.value = false; });
